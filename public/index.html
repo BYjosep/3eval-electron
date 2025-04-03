@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Mapa con OpenStreetMap</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<button id="sidebar-toggle">☰</button>
+<div id="sidebar">
+    <select id="list-select"></select>
+    <input type="text" id="new-list-name" placeholder="Nueva lista">
+    <button id="create-list">Crear</button>
+    <button id="delete-list">Borrar</button>
+    <button id="clear-points">Limpiar puntos</button>
+</div>
+<div id="map"></div>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="../src/renderer/renderer.js"></script>
+</body>
+</html>
