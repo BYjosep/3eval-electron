@@ -17,10 +17,6 @@ function refreshListSelector() {
             opt.innerText = name;
             select.appendChild(opt);
         });
-        if (lists.length > 0) {
-            select.value = lists[0];
-            loadList(lists[0]);
-        }
     });
 }
 
@@ -33,37 +29,46 @@ function loadList(name) {
     });
 }
 
-document.getElementById('list-select').addEventListener('change', (e) => {
-    loadList(e.target.value);
-});
+window.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('sidebar-toggle').addEventListener('click', () => {
+        document.getElementById('sidebar').classList.toggle('open');
+    });
 
-document.getElementById('create-list').addEventListener('click', () => {
-    const name = document.getElementById('new-list-name').value.trim();
-    if (name) {
-        currentList = name;
+    document.getElementById('list-select').addEventListener('change', (e) => {
+        loadList(e.target.value);
+    });
+
+    document.getElementById('create-list').addEventListener('click', () => {
+        const name = document.getElementById('new-list-name').value.trim();
+        if (name) {
+            currentList = name;
+            points = [];
+            window.electronAPI.savePoints(currentList, points);
+            refreshListSelector();
+        }
+    });
+
+    document.getElementById('delete-list').addEventListener('click', () => {
+        const select = document.getElementById('list-select');
+        if (select.options.length === 0) {
+            alert('No hay listas disponibles para borrar.');
+            return;
+        }
+
+        const name = select.value;
+        if (confirm(`¿Borrar la lista '${name}'?`)) {
+            window.electronAPI.deleteList(name);
+            refreshListSelector();
+        }
+    });
+
+    document.getElementById('clear-points').addEventListener('click', () => {
         points = [];
-        window.electronAPI.savePoints(currentList, points);
-        refreshListSelector();
-    }
-});
+        map.eachLayer(layer => { if (layer instanceof L.Marker) map.removeLayer(layer); });
+        if (currentList) window.electronAPI.savePoints(currentList, points);
+    });
 
-document.getElementById('delete-list').addEventListener('click', () => {
-    const name = document.getElementById('list-select').value;
-    if (confirm(`¿Borrar la lista '${name}'?`)) {
-        window.electronAPI.deleteList(name);
-        refreshListSelector();
-    }
-});
-
-document.getElementById('clear-points').addEventListener('click', () => {
-    points = [];
-    map.eachLayer(layer => { if (layer instanceof L.Marker) map.removeLayer(layer); });
-    if (currentList) window.electronAPI.savePoints(currentList, points);
-});
-
-// Botón para mostrar/ocultar el menú
-document.getElementById('sidebar-toggle').addEventListener('click', () => {
-    document.getElementById('sidebar').classList.toggle('open');
+    refreshListSelector();
 });
 
 function addPointToMap(point) {
@@ -140,5 +145,3 @@ map.on('click', function (e) {
     if (!currentList) return alert('Primero debes crear o seleccionar una lista.');
     createPointPopup(e.latlng);
 });
-
-refreshListSelector();

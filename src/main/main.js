@@ -3,8 +3,11 @@ const path = require('path');
 const fs = require('fs');
 const https = require('https');
 
+const dataDir = path.join(__dirname, '../../data');
+if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
+
 function getListPath(name) {
-    return path.join(app.getPath('userData'), `${name}.json`);
+    return path.join(dataDir, `${name}.json`);
 }
 
 function createWindow () {
@@ -28,7 +31,7 @@ app.on('window-all-closed', () => {
 });
 
 ipcMain.handle('get-lists', () => {
-    const files = fs.readdirSync(app.getPath('userData'));
+    const files = fs.readdirSync(dataDir);
     return files.filter(f => f.endsWith('.json')).map(f => path.basename(f, '.json'));
 });
 
@@ -48,6 +51,7 @@ ipcMain.handle('save-points', (event, listName, points) => {
     const filePath = getListPath(listName);
     try {
         fs.writeFileSync(filePath, JSON.stringify(points, null, 2), 'utf-8');
+        console.log(`Guardado exitoso en ${filePath}`);
     } catch (err) {
         console.error('Error al escribir archivo:', err);
     }
@@ -63,7 +67,7 @@ ipcMain.handle('delete-list', (event, listName) => {
 });
 
 ipcMain.handle('get-place-name', async (event, lat, lon) => {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`;
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`;
     return new Promise((resolve) => {
         https.get(url, {
             headers: {
@@ -76,7 +80,7 @@ ipcMain.handle('get-place-name', async (event, lat, lon) => {
                 try {
                     const json = JSON.parse(data);
                     const address = json.address || {};
-                    const name = address.village || address.town || address.city || 'Lugar desconocido';
+                    const name = json.name || address.amenity || address.road || address.village || address.town || address.city || 'Lugar desconocido';
                     resolve(name);
                 } catch (e) {
                     console.error('Error al parsear Nominatim:', e);
