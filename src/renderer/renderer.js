@@ -6,6 +6,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 let points = [];
 let currentList = null;
+let sidebarVisible = false;
 
 function refreshListSelector() {
     const select = document.getElementById('list-select');
@@ -30,21 +31,40 @@ function loadList(name) {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('sidebar-toggle').addEventListener('click', () => {
-        document.getElementById('sidebar').classList.toggle('open');
+    console.log('DOM Content Loaded');
+
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+
+    sidebarToggle.addEventListener('click', () => {
+        console.log('Sidebar toggle clicked');
+        sidebarVisible = !sidebarVisible;
+        sidebar.classList.toggle('open');
+
+        if (sidebarVisible) {
+            const input = document.getElementById('new-list-name');
+            setTimeout(() => {
+                input.focus();
+                console.log('Input focused');
+            }, 300);
+        }
     });
 
     document.getElementById('list-select').addEventListener('change', (e) => {
+        console.log('List selected:', e.target.value);
         loadList(e.target.value);
     });
 
     document.getElementById('create-list').addEventListener('click', () => {
-        const name = document.getElementById('new-list-name').value.trim();
+        const input = document.getElementById('new-list-name');
+        const name = input.value.trim();
+        console.log('Creating list:', name);
         if (name) {
             currentList = name;
             points = [];
             window.electronAPI.savePoints(currentList, points);
             refreshListSelector();
+            input.value = '';
         }
     });
 

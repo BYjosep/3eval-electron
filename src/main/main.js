@@ -22,9 +22,13 @@ function createWindow () {
     });
 
     win.loadFile(path.join(__dirname, '../../public/index.html'));
+    console.log('Window created and loaded');
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+    console.log('App is ready');
+    createWindow();
+});
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
@@ -48,12 +52,15 @@ ipcMain.handle('load-points', (event, listName) => {
 });
 
 ipcMain.handle('save-points', (event, listName, points) => {
+    console.log('Attempting to save points for list:', listName);
     const filePath = getListPath(listName);
     try {
         fs.writeFileSync(filePath, JSON.stringify(points, null, 2), 'utf-8');
         console.log(`Guardado exitoso en ${filePath}`);
+        return true;
     } catch (err) {
         console.error('Error al escribir archivo:', err);
+        return false;
     }
 });
 
