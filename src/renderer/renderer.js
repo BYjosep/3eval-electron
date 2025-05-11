@@ -43,26 +43,118 @@ L.control.layers(baseMaps, null, { position: 'bottomleft' }).addTo(map);
 let currentList = null;
 let points = [];
 
-function getCurrentIcon() {
-    return L.divIcon({
-        html: `<div style="text-align: center;">
-             <img src="./icons/map.webp" style="width: 30px; height: 45px;" />
-           </div>`,
+function drawPoint(point) {
+    const emojiIcon = L.divIcon({
+        html: '<div style="font-size: 28px; line-height: 1;">📍</div>',
         iconSize: [30, 45],
         iconAnchor: [15, 45],
         popupAnchor: [0, -40],
         className: ''
     });
+
+    const marker = L.marker(point.coords, { icon: emojiIcon }).addTo(map);
+
+    const editButton = `<button onclick="editPoint('${point.coords[0]}','${point.coords[1]}')">✏️ Editar</button>`;
+    let popupText = `<b>${point.title}</b><br>${point.question}<br><ul>`;
+    for (const ans of point.answers) {
+        popupText += `<li>${ans.text}${ans.correct ? ' ✅' : ''}</li>`;
+    }
+    popupText += '</ul>' + editButton;
+
+    marker.bindPopup(popupText);
+
+    marker.on('contextmenu', () => {
+        points = points.filter(p => p !== point);
+        map.removeLayer(marker);
+        savePoints();
+    });
+
+    marker._pointData = point;
 }
 
-function updateMapTheme(isDarkMode) {
-    const baseName = localStorage.getItem('currentBase') || 'Callejero';
-    const isRelieve = baseName === 'Relieve';
-    const base = isRelieve ? relieveClaro : callejeroClaro;
-    const dark = isRelieve ? relieveOscuro : callejeroOscuro;
-    map.removeLayer(base);
-    map.addLayer(isDarkMode ? dark : base);
-    currentBase = isDarkMode ? dark : base;
+function editPoint(lat, lng) {
+    const point = points.find(p => p.coords[0] == lat && p.coords[1] == lng);
+    if (!point) return;
+
+    const template = document.getElementById('point-form-template');
+    const form = template.content.cloneNode(true);
+    const titleInput = form.querySelector('.point-title');
+    const questionInput = form.querySelector('.point-question');
+    const answersContainer = form.querySelector('.answers-container');
+    const addAnswerBtn = form.querySelector('.add-answer');
+    const saveBtn = form.querySelector('.save-point');
+
+    titleInput.value = point.title;
+    questionInput.value = point.question;
+
+    function addAnswer(text = '', isCorrect = false) {
+        const item = document.createElement('div');
+        item.className = 'answer-item';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = text;
+
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'correct';
+
+        if (isCorrect) radio.checked = true;
+
+        item.appendChild(radio);
+        item.appendChild(input);
+        answersContainer.appendChild(item);
+    }
+
+    point.answers.forEach(ans => addAnswer(ans.text, ans.correct));
+    addAnswerBtn.onclick = () => addAnswer();
+
+    saveBtn.onclick = () => {
+        const newTitle = titleInput.value.trim();
+        const newQuestion = questionInput.value.trim();
+
+        const answers = [];
+        let hasCorrect = false;
+
+        answersContainer.querySelectorAll('.answer-item').forEach(item => {
+            const text = item.querySelector('input[type="text"]').value.trim();
+            const correct = item.querySelector('input[type="radio"]').checked;
+            if (text) {
+                answers.push({ text, correct });
+                if (correct) hasCorrect = true;
+            }
+        });
+
+        if (!newTitle || !newQuestion || answers.length < 2 || !hasCorrect) {
+            alert("Completa todos los campos correctamente.");
+            return;
+        }
+
+        point.title = newTitle;
+        point.question = newQuestion;
+        point.answers = answers;
+
+        map.eachLayer(layer => {
+            if (layer instanceof L.Marker && layer._pointData === point) {
+                map.removeLayer(layer);
+            }
+        });
+
+        drawPoint(point);
+        savePoints();
+        map.closePopup();
+    };
+
+    L.popup()
+        .setLatLng(point.coords)
+        .setContent(form)
+        .openOn(map);
+}
+
+function savePoints() {
+    if (currentList) {
+        window.electronAPI.savePoints(currentList, points);
+    }
 }
 
 function refreshListSelector() {
@@ -87,41 +179,6 @@ function loadList(name) {
         });
         points.forEach(drawPoint);
     });
-}
-
-function drawPoint(point) {
-    const emojiIcon = L.divIcon({
-        html: '<div style="font-size: 28px; line-height: 1;">📍</div>',
-        iconSize: [30, 45],
-        iconAnchor: [15, 45],
-        popupAnchor: [0, -40],
-        className: ''
-    });
-
-    const marker = L.marker(point.coords, { icon: emojiIcon }).addTo(map);
-
-    let popupText = `<b>${point.title}</b><br>${point.question}<br><ul>`;
-    for (const ans of point.answers) {
-        popupText += `<li>${ans.text}${ans.correct ? ' ✅' : ''}</li>`;
-    }
-    popupText += '</ul>';
-
-    marker.bindPopup(popupText);
-
-    marker.on('contextmenu', () => {
-        points = points.filter(p => p !== point);
-        map.removeLayer(marker);
-        savePoints();
-    });
-}
-
-
-
-
-function savePoints() {
-    if (currentList) {
-        window.electronAPI.savePoints(currentList, points);
-    }
 }
 
 function createPointForm(latlng) {
