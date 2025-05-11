@@ -14,7 +14,7 @@ let relieve = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
 let map = L.map('map', {
     center: [40.4168, -3.7038],
     zoom: 13,
-    layers: [callejero] // vista por defecto
+    layers: [callejero]
 });
 
 const baseMaps = {
@@ -23,9 +23,25 @@ const baseMaps = {
     "Relieve": relieve
 };
 
-// L.control.layers(baseMaps).addTo(map);
 L.control.layers(baseMaps, null, { position: 'bottomleft' }).addTo(map);
 
+const defaultIcon = new L.Icon({
+    iconUrl: './icons/marker-light.svg',
+    iconSize: [30, 45],
+    iconAnchor: [15, 45],
+    popupAnchor: [0, -40]
+});
+
+const darkIcon = new L.Icon({
+    iconUrl: './icons/marker-dark.svg',
+    iconSize: [30, 45],
+    iconAnchor: [15, 45],
+    popupAnchor: [0, -40]
+});
+
+function getCurrentIcon() {
+    return document.body.classList.contains('dark-mode') ? darkIcon : defaultIcon;
+}
 
 let currentList = null;
 let points = [];
@@ -34,7 +50,6 @@ function refreshListSelector() {
     const select = document.getElementById('list-select');
     select.innerHTML = '';
     window.electronAPI.getLists().then(lists => {
-        console.log("Listas disponibles:", lists);
         lists.forEach(name => {
             const opt = document.createElement('option');
             opt.value = name;
@@ -56,7 +71,7 @@ function loadList(name) {
 }
 
 function drawPoint(point) {
-    const marker = L.marker(point.coords).addTo(map);
+    const marker = L.marker(point.coords, { icon: getCurrentIcon() }).addTo(map);
     let popupText = `<b>${point.title}</b><br>${point.question}<br><ul>`;
     for (const ans of point.answers) {
         popupText += `<li>${ans.text}${ans.correct ? ' ✅' : ''}</li>`;
@@ -161,8 +176,6 @@ map.on('click', function (e) {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOM completamente cargado");
-
     const sidebar = document.getElementById('sidebar');
     const toggleBtn = document.getElementById('sidebar-toggle');
     const input = document.getElementById('new-list-name');
@@ -171,25 +184,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     toggleBtn.addEventListener('click', () => {
         sidebar.classList.toggle('open');
-        console.log("Sidebar toggle clicked");
-
         if (sidebar.classList.contains('open')) {
             setTimeout(() => {
                 input.removeAttribute('disabled');
                 input.focus();
-                console.log("Input activado y enfocado");
             }, 300);
         }
     });
 
     createBtn.addEventListener('click', () => {
         const name = input.value.trim();
-        console.log("Crear lista presionado:", name);
         if (name) {
             currentList = name;
             points = [];
             window.electronAPI.savePoints(name, points).then(() => {
-                console.log("Lista guardada:", name);
                 refreshListSelector();
                 input.value = '';
             });
@@ -198,7 +206,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     select.addEventListener('change', e => {
         const selected = e.target.value;
-        console.log("Lista seleccionada:", selected);
         currentList = selected;
         loadList(currentList);
     });
@@ -206,7 +213,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('delete-list').addEventListener('click', () => {
         if (currentList && confirm(`¿Eliminar lista '${currentList}'?`)) {
             window.electronAPI.deleteList(currentList).then(() => {
-                console.log("Lista eliminada:", currentList);
                 currentList = null;
                 points = [];
                 refreshListSelector();
@@ -218,7 +224,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('clear-points').addEventListener('click', () => {
-        console.log("Limpiar puntos");
         points = [];
         map.eachLayer(layer => {
             if (layer instanceof L.Marker) map.removeLayer(layer);
