@@ -1,0 +1,100 @@
+body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow: hidden;
+    font-family: 'Segoe UI', Roboto, sans-serif;
+}
+
+#map {
+    height: 100vh;
+    width: 100%;
+    z-index: 0;
+}
+
+#sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 300px;
+    height: 100%;
+    background: #fff;
+    padding: 20px;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    z-index: 1001;
+    overflow-y: auto;
+}
+
+#sidebar.open {
+    transform: translateX(0);
+}
+
+#sidebar h2 {
+    margin-top: 0;
+}
+
+#sidebar select,
+#sidebar input[type="text"],
+#sidebar button {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 8px;
+    font-size: 1rem;
+}
+
+#sidebar-toggle {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    z-index: 1100;
+    background: white;
+    border: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    width: 60px;
+    height: 40px;
+}
+
+.point-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.point-form input,
+.point-form textarea {
+    width: 100%;
+    padding: 6px;
+    font-size: 1rem;
+}
+
+.answers-container {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 5px;
+}
+
+.answer-item {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.answer-item input[type="text"] {
+    flex-grow: 1;
+}
+
+.answer-item input[type="radio"] {
+    transform: scale(1.3);
+}
+
+button.add-answer,
+button.save-point {
+    padding: 6px;
+    font-size: 1rem;
+}

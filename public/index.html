@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Mapa Interactivo de Preguntas</title>
+
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="Style.css" />
+</head>
+<body>
+<button id="sidebar-toggle" class="right">Menú</button>
+
+<div id="sidebar" class="right">
+    <h2>Listas</h2>
+    <select id="list-select"></select>
+    <input type="text" id="new-list-name" placeholder="Nueva lista" />
+    <button id="create-list">Crear</button>
+    <button id="delete-list">Borrar</button>
+    <button id="clear-points">Limpiar puntos</button>
+</div>
+
+<div id="map"></div>
+
+<!-- Plantilla para formulario de punto -->
+<template id="point-form-template">
+    <div class="point-form">
+        <label>Título:<br><input type="text" class="point-title" /></label>
+        <label>Pregunta:<br><textarea class="point-question"></textarea></label>
+
+        <div class="answers-container"></div>
+
+        <button class="add-answer">+ Añadir respuesta</button>
+        <button class="save-point">Guardar punto</button>
+    </div>
+</template>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="../src/renderer/renderer.js"></script>
+
+</body>
+</html>

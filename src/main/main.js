@@ -10,93 +10,73 @@ function getListPath(name) {
     return path.join(dataDir, `${name}.json`);
 }
 
-function createWindow () {
+function createWindow() {
     const win = new BrowserWindow({
         width: 1200,
         height: 800,
         webPreferences: {
             preload: path.join(__dirname, '../preload/preload.js'),
             contextIsolation: true,
-            nodeIntegration: false
+            nodeIntegration: false,
+            webSecurity: false
         }
     });
 
     win.loadFile(path.join(__dirname, '../../public/index.html'));
-    console.log('Window created and loaded');
 }
 
-app.whenReady().then(() => {
-    console.log('App is ready');
-    createWindow();
-});
-
-app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') app.quit();
-});
-
 ipcMain.handle('get-lists', () => {
+    console.log("Leyendo listas desde:", dataDir);
     const files = fs.readdirSync(dataDir);
-    return files.filter(f => f.endsWith('.json')).map(f => path.basename(f, '.json'));
+    console.log("Archivos encontrados:", files);
+    return files
+        .filter(f => f.endsWith('.json'))
+        .map(f => path.basename(f, '.json'));
 });
 
-ipcMain.handle('load-points', (event, listName) => {
+ipcMain.handle('load-points', (_, listName) => {
     const filePath = getListPath(listName);
+    if (!fs.existsSync(filePath)) return [];
+    const raw = fs.readFileSync(filePath, 'utf-8');
     try {
-        if (!fs.existsSync(filePath)) return [];
-        const data = fs.readFileSync(filePath, 'utf-8');
-        return JSON.parse(data);
-    } catch (err) {
-        console.error('Error al leer archivo:', err);
+        return JSON.parse(raw);
+    } catch {
         return [];
     }
 });
 
-ipcMain.handle('save-points', (event, listName, points) => {
-    console.log('Attempting to save points for list:', listName);
+ipcMain.handle('save-points', (_, listName, points) => {
     const filePath = getListPath(listName);
-    try {
-        fs.writeFileSync(filePath, JSON.stringify(points, null, 2), 'utf-8');
-        console.log(`Guardado exitoso en ${filePath}`);
-        return true;
-    } catch (err) {
-        console.error('Error al escribir archivo:', err);
-        return false;
-    }
+    fs.writeFileSync(filePath, JSON.stringify(points, null, 2), 'utf-8');
 });
 
-ipcMain.handle('delete-list', (event, listName) => {
+ipcMain.handle('delete-list', (_, listName) => {
     const filePath = getListPath(listName);
-    try {
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-    } catch (err) {
-        console.error('Error al borrar lista:', err);
-    }
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 });
 
-ipcMain.handle('get-place-name', async (event, lat, lon) => {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`;
+ipcMain.handle('get-place-name', (_, lat, lon) => {
     return new Promise((resolve) => {
-        https.get(url, {
-            headers: {
-                'User-Agent': 'openstreetmap-electron-app/1.0 (tucorreo@ejemplo.com)'
-            }
-        }, (res) => {
+        const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
+        https.get(url, { headers: { 'User-Agent': 'electron-app' } }, (res) => {
             let data = '';
             res.on('data', chunk => data += chunk);
             res.on('end', () => {
                 try {
                     const json = JSON.parse(data);
-                    const address = json.address || {};
-                    const name = json.name || address.amenity || address.road || address.village || address.town || address.city || 'Lugar desconocido';
-                    resolve(name);
-                } catch (e) {
-                    console.error('Error al parsear Nominatim:', e);
-                    resolve('Lugar desconocido');
+                    resolve(json.display_name || 'Ubicación desconocida');
+                } catch {
+                    resolve('Ubicación desconocida');
                 }
             });
-        }).on('error', (err) => {
-            console.error('Error solicitud HTTPS:', err);
-            resolve('Lugar desconocido');
+        }).on('error', () => {
+            resolve('Ubicación desconocida');
         });
     });
+});
+
+app.whenReady().then(createWindow);
+
+app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit();
 });
