@@ -1,0 +1,21 @@
+[
+  {
+    "coords": [
+      40.484428992581705,
+      -3.7653923034667973
+    ],
+    "title": "Solo respuesta incorecta",
+    "question": "esto es un test",
+    "answers": [
+      {
+        "text": "no es este",
+        "correct": true
+      },
+      {
+        "text": "Si es un test",
+        "correct": false
+      }
+    ],
+    "location": "Ubicación"
+  }
+]
